@@ -71,8 +71,43 @@
     fill: currentColor;
   }
 
+  .duration-picker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .duration-picker button {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: #eee;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .duration-picker button:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .duration-picker .duration-label {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.5);
+    min-width: 5rem;
+    text-align: center;
+  }
+
   .note {
-    margin-top: 2rem;
+    margin-top: 1.5rem;
     font-size: 0.85rem;
     color: rgba(255, 255, 255, 0.3);
   }
@@ -91,7 +126,12 @@
       <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
     </button>
   </div>
-  <div class="note">2 minutes, then the orchestra plays you off</div>
+  <div class="duration-picker" id="durationPicker">
+    <button id="decBtn" title="Decrease time">&#8722;</button>
+    <span class="duration-label" id="durationLabel">2:00</span>
+    <button id="incBtn" title="Increase time">+</button>
+  </div>
+  <div class="note">then the orchestra plays you off</div>
 </div>
 
 <script>
@@ -99,15 +139,34 @@ const MUSIC_FILES = [
   'music/Classicals.de - Brahms - Symphony No. 1 in C Minor, Op. 68 - II. Andante sostenuto.mp3',
 ];
 
-const DURATION = 2 * 60; // seconds
+const DEFAULT_DURATION = 2 * 60;
+const STEP = 30; // seconds per increment
+const MIN_DURATION = 30;
+const MAX_DURATION = 10 * 60;
 
 const timerEl = document.getElementById('timer');
 const playPauseBtn = document.getElementById('playPauseBtn');
 const stopBtn = document.getElementById('stopBtn');
 const playIcon = document.getElementById('playIcon');
 const pauseIcon = document.getElementById('pauseIcon');
+const durationLabel = document.getElementById('durationLabel');
+const durationPicker = document.getElementById('durationPicker');
+const decBtn = document.getElementById('decBtn');
+const incBtn = document.getElementById('incBtn');
 
-let remaining = DURATION; // seconds remaining (goes negative after 0)
+function getCookie(name) {
+  const m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+function setCookie(name, value) {
+  document.cookie = name + '=' + encodeURIComponent(value) + '; max-age=31536000; path=/; SameSite=Lax';
+}
+
+let duration = parseInt(getCookie('playoff_duration'), 10) || DEFAULT_DURATION;
+if (duration < MIN_DURATION || duration > MAX_DURATION) duration = DEFAULT_DURATION;
+
+let remaining = duration;
 let running = false;
 let intervalId = null;
 let audio = null;
@@ -125,6 +184,9 @@ function render() {
   timerEl.classList.toggle('overtime', remaining < 0);
   playIcon.style.display = running ? 'none' : '';
   pauseIcon.style.display = running ? '' : 'none';
+  durationLabel.textContent = formatTime(duration);
+  durationPicker.style.opacity = running || remaining !== duration ? '0.3' : '';
+  durationPicker.style.pointerEvents = running || remaining !== duration ? 'none' : '';
 }
 
 function tick() {
@@ -139,6 +201,13 @@ function startMusic() {
   audio = new Audio(file);
   audio.loop = true;
   audio.play();
+}
+
+function setDuration(newDuration) {
+  duration = Math.max(MIN_DURATION, Math.min(MAX_DURATION, newDuration));
+  remaining = duration;
+  setCookie('playoff_duration', duration);
+  render();
 }
 
 function play() {
@@ -163,12 +232,14 @@ function stop() {
   clearInterval(intervalId);
   intervalId = null;
   if (audio) { audio.pause(); audio = null; }
-  remaining = DURATION;
+  remaining = duration;
   render();
 }
 
 playPauseBtn.addEventListener('click', () => running ? pause() : play());
 stopBtn.addEventListener('click', stop);
+decBtn.addEventListener('click', () => setDuration(duration - STEP));
+incBtn.addEventListener('click', () => setDuration(duration + STEP));
 
 render();
 </script>
