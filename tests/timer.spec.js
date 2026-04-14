@@ -67,26 +67,26 @@ test.describe('Play Off Timer', () => {
     await expect(page.locator('#timer')).toHaveClass(/overtime/);
   });
 
-  test('increment and decrement change the duration', async ({ page }) => {
+  test('increment and decrement change the duration in 10s steps', async ({ page }) => {
     await page.click('#incBtn');
-    await expect(page.locator('#timer')).toHaveText('2:30');
-    await expect(page.locator('#durationLabel')).toHaveText('2:30');
+    await expect(page.locator('#timer')).toHaveText('2:10');
+    await expect(page.locator('#durationLabel')).toHaveText('2:10');
 
     await page.click('#decBtn');
     await expect(page.locator('#timer')).toHaveText('2:00');
 
     await page.click('#decBtn');
-    await expect(page.locator('#timer')).toHaveText('1:30');
+    await expect(page.locator('#timer')).toHaveText('1:50');
   });
 
   test('duration is clamped to min/max', async ({ page }) => {
-    // Decrease to minimum (30s)
-    for (let i = 0; i < 10; i++) await page.click('#decBtn');
-    await expect(page.locator('#timer')).toHaveText('0:30');
+    // Decrease to minimum (10s)
+    for (let i = 0; i < 15; i++) await page.click('#decBtn');
+    await expect(page.locator('#timer')).toHaveText('0:10');
 
     // Try to go below
     await page.click('#decBtn');
-    await expect(page.locator('#timer')).toHaveText('0:30');
+    await expect(page.locator('#timer')).toHaveText('0:10');
   });
 
   test('duration picker is disabled while running', async ({ page }) => {
@@ -96,23 +96,24 @@ test.describe('Play Off Timer', () => {
   });
 
   test('duration persists via cookie', async ({ page, context }) => {
+    await page.click('#incBtn'); // 2:10
+    await page.click('#incBtn'); // 2:20
     await page.click('#incBtn'); // 2:30
-    await page.click('#incBtn'); // 3:00
-    await expect(page.locator('#timer')).toHaveText('3:00');
+    await expect(page.locator('#timer')).toHaveText('2:30');
 
-    // Reload the page — cookie should restore 3:00
+    // Reload the page — cookie should restore 2:30
     await page.goto('/');
-    await expect(page.locator('#timer')).toHaveText('3:00');
-    await expect(page.locator('#durationLabel')).toHaveText('3:00');
+    await expect(page.locator('#timer')).toHaveText('2:30');
+    await expect(page.locator('#durationLabel')).toHaveText('2:30');
   });
 
   test('stop resets to custom duration, not default', async ({ page }) => {
-    await page.click('#incBtn'); // 2:30
+    await page.click('#incBtn'); // 2:10
     await page.click('#playPauseBtn');
     await page.waitForTimeout(1500);
     await page.click('#stopBtn');
 
-    await expect(page.locator('#timer')).toHaveText('2:30');
+    await expect(page.locator('#timer')).toHaveText('2:10');
   });
 
   test('resume after pause continues from paused time', async ({ page }) => {

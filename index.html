@@ -140,8 +140,8 @@ const MUSIC_FILES = [
 ];
 
 const DEFAULT_DURATION = 2 * 60;
-const STEP = 30; // seconds per increment
-const MIN_DURATION = 30;
+const STEP = 10; // seconds per increment
+const MIN_DURATION = 10;
 const MAX_DURATION = 10 * 60;
 
 const timerEl = document.getElementById('timer');
@@ -238,8 +238,36 @@ function stop() {
 
 playPauseBtn.addEventListener('click', () => running ? pause() : play());
 stopBtn.addEventListener('click', stop);
-decBtn.addEventListener('click', () => setDuration(duration - STEP));
-incBtn.addEventListener('click', () => setDuration(duration + STEP));
+
+function addHoldRepeat(btn, action) {
+  let holdTimer = null;
+  let repeatTimer = null;
+
+  function start(e) {
+    e.preventDefault();
+    action();
+    holdTimer = setTimeout(() => {
+      repeatTimer = setInterval(action, 150);
+    }, 400);
+  }
+
+  function stop() {
+    clearTimeout(holdTimer);
+    clearInterval(repeatTimer);
+    holdTimer = null;
+    repeatTimer = null;
+  }
+
+  btn.addEventListener('mousedown', start);
+  btn.addEventListener('touchstart', start, { passive: false });
+  btn.addEventListener('mouseup', stop);
+  btn.addEventListener('mouseleave', stop);
+  btn.addEventListener('touchend', stop);
+  btn.addEventListener('touchcancel', stop);
+}
+
+addHoldRepeat(decBtn, () => setDuration(duration - STEP));
+addHoldRepeat(incBtn, () => setDuration(duration + STEP));
 
 render();
 </script>
